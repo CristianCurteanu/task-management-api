@@ -30,11 +30,13 @@ func ClientTokenResource(rw http.ResponseWriter, r *http.Request, _ httprouter.P
 	client := Client{Email: clientParams.Email, Uuid: string(uuid), Key: key}
 
 	conn := client.Connect()
-	if conn.NewRecord(client) {
-		conn.Create(&client)
+	conn.NewRecord(client)
+	record := conn.Create(&client)
+	if len(record.GetErrors()) == 0 {
 		json.NewEncoder(rw).Encode(Response{"OK"})
 	} else {
-		json.NewEncoder(rw).Encode(Response{"Already exists"})
+		rw.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(rw).Encode(Response{"Error"})
 	}
 
 }
@@ -47,9 +49,9 @@ func UuidGenerator() []byte {
 	return uuid
 }
 
-func JwtEncoder(uuid []byte, email string) string {
+func JwtEncoder(uuid []byte, val string) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		Issuer:    email,
+		Issuer:    val,
 		ExpiresAt: 15000,
 	})
 	tokenString, err := token.SignedString(uuid)
