@@ -1,0 +1,23 @@
+language: go
+go:
+  - 1.x
+
+install: true
+
+before_script:
+  - GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/)
+  - export DB_HOST=localhost
+  - export DB_NAME=tast_management
+  - export GOPATH=$HOME/gopath/src/github.com/CristianCurteanu/task-management-api
+  - go get github.com/dgrijalva/jwt-go
+  - go get github.com/jinzhu/gorm
+  - go get github.com/jinzhu/gorm/dialects/sqlite
+  - go get github.com/julienschmidt/httprouter
+  - go get github.com/gorilla/mux
+  - go get gopkg.in/mgo.v2
+  - go get gopkg.in/check.v1
+
+script:
+  - go test -v ./tests/...
+
+services: mongodb
