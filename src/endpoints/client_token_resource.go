@@ -18,6 +18,10 @@ type Response struct {
 	Message string
 }
 
+type TokenResponse struct {
+	Token string
+}
+
 var clientParams ClientParams
 
 func ClientTokenResource(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -25,20 +29,21 @@ func ClientTokenResource(rw http.ResponseWriter, r *http.Request, _ httprouter.P
 	if err := decoder.Decode(&clientParams); err != nil {
 		panic(err.Error())
 	}
+
 	uuid := UuidGenerator()
 	key := JwtEncoder(uuid, clientParams.Email)
+
 	client := Client{Email: clientParams.Email, Uuid: string(uuid), Key: key}
+	clientTable := new(Client).Initialize()
+	insertionError := clientTable.Insert(client)
 
-	conn := client.Connect()
-	conn.NewRecord(client)
-	record := conn.Create(&client)
-	if len(record.GetErrors()) == 0 {
-		json.NewEncoder(rw).Encode(Response{"OK"})
+	if insertionError != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(Response{"Error, check with administrator"})
 	} else {
-		rw.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(rw).Encode(Response{"Error"})
+		rw.WriteHeader(http.StatusCreated)
+		json.NewEncoder(rw).Encode(TokenResponse{key})
 	}
-
 }
 
 func UuidGenerator() []byte {

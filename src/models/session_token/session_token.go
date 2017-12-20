@@ -1,22 +1,27 @@
 package models
 
 import (
-	. "config"
+	"helpers/mongo"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	mgo "gopkg.in/mgo.v2"
 )
 
-type Connect interface {
-	Connect() *gorm.DB
-}
+const SESSION_TOKEN_TABLE = "session_tokens"
 
 type SessionToken struct {
-	gorm.Model
-	Token      string `gorm:"unique_index"`
+	Token      string
 	ExpirestAt time.Time
 }
 
-func (conn *SessionToken) Connect() *gorm.DB {
-	return DatabaseConnection()
+var index = mgo.Index{
+	Key:        []string{"token", "expiresat"},
+	Unique:     true,
+	DropDups:   true,
+	Background: true,
+	Sparse:     true,
+}
+
+func (c *SessionToken) Initialize() *mgo.Collection {
+	return mongo.CreateInitialSession(SESSION_TOKEN_TABLE, &index)
 }
