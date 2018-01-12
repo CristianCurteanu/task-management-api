@@ -1,22 +1,27 @@
-package models
+package client
 
 import (
-	. "config"
+	"helpers/mongo"
 
-	"github.com/jinzhu/gorm"
+	mgo "gopkg.in/mgo.v2"
 )
 
-type Connect interface {
-	Connect() *gorm.DB
-}
+const CLIENT_TABLE = "client"
 
 type Client struct {
-	gorm.Model
-	Email string `gorm:"unique_index"`
+	Email string
 	Uuid  string
 	Key   string
 }
 
-func (conn *Client) Connect() *gorm.DB {
-	return DatabaseConnection()
+var index = mgo.Index{
+	Key:        []string{"email"},
+	Unique:     true,
+	DropDups:   true,
+	Background: true,
+	Sparse:     true,
+}
+
+func (c *Client) Initialize() *mgo.Collection {
+	return mongo.CreateInitialSession(CLIENT_TABLE, &index)
 }
