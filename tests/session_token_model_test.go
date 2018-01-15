@@ -13,7 +13,7 @@ func (s *ClientSuite) TestSessionTokenCreation(check *C) {
 	new(SessionToken).Initialize().RemoveAll(nil)
 
 	tokenCollection := new(SessionToken).Initialize()
-	sessionToken := SessionToken{Token: "some-cr3epY-t0keN", ExpirestAt: time.Now()}
+	sessionToken := SessionToken{Token: "some-cr3epY-t0keN", ExpirestAt: time.After(time.Minute * 15)}
 
 	insertError := tokenCollection.Insert(sessionToken)
 	check.Assert(insertError, IsNil)

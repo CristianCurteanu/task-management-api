@@ -6,7 +6,10 @@ import (
 	"net/http"
 	"os/exec"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	jwt "helpers/jwt"
+
+	jwtGo "github.com/dgrijalva/jwt-go"
+
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -31,9 +34,21 @@ func ClientTokenResource(rw http.ResponseWriter, r *http.Request, _ httprouter.P
 	}
 
 	uuid := UuidGenerator()
-	key := JwtEncoder(uuid, clientParams.Email)
+	type ClientTokenClaims struct {
+		Uuid string `json:"uuid"`
+		jwtGo.StandardClaims
+	}
 
-	client := Client{Email: clientParams.Email, Uuid: string(uuid), Key: key}
+	claims := ClientTokenClaims{
+		uuid,
+		jwtGo.StandardClaims{
+			ExpiresAt: 15000,
+		},
+	}
+
+	key, _ := jwt.Encoder(claims)
+
+	client := Client{Email: clientParams.Email, Uuid: uuid, Key: key}
 	clientTable := new(Client).Initialize()
 	insertionError := clientTable.Insert(client)
 
@@ -46,22 +61,10 @@ func ClientTokenResource(rw http.ResponseWriter, r *http.Request, _ httprouter.P
 	}
 }
 
-func UuidGenerator() []byte {
+func UuidGenerator() string {
 	uuid, error := exec.Command("uuidgen").Output()
 	if error != nil {
 		panic(error.Error())
 	}
-	return uuid
-}
-
-func JwtEncoder(uuid []byte, val string) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		Issuer:    val,
-		ExpiresAt: 15000,
-	})
-	tokenString, err := token.SignedString(uuid)
-	if err != nil {
-		panic(err.Error())
-	}
-	return tokenString
+	return string(uuid)
 }
